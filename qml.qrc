@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qtquickcontrols2.conf</file>
+        <file>qml/main.qml</file>
+        <file>qml/TestApp.qml</file>
+        <file>qml/Images/trash-32.svg</file>
+    </qresource>
+</RCC>
