@@ -20,6 +20,7 @@ public:
     ~NetworkReply();
 
     Q_INVOKABLE QByteArray readAll();
+    Q_INVOKABLE void close();
 
 signals:
     void finished();
@@ -29,12 +30,15 @@ protected slots:
 
 protected:
     QNetworkReply* m_Reply;
+    bool m_FollowRedirects;
 
     int error() const { return m_Reply ? m_Reply->error() : 0; }
     QString errorString() const { return m_Reply ? m_Reply->errorString() : ""; }
     int statusCode() const;
     QString statusText() const;
     QVariant headers() const;
+    bool followRedirects() const { return m_FollowRedirects; }
+    void setFollowRedirects(bool followRedirects);
 
 };
 

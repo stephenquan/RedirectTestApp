@@ -6,6 +6,7 @@
 #include "NetworkReply.h"
 #include <QQmlEngine>
 #include <QHttpMultiPart>
+#include <QNetworkProxy>
 #include <QUrl>
 #include <QDebug>
 
@@ -111,6 +112,7 @@ NetworkReply* NetworkAccessManager::get(const QUrl& url)
     request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, QVariant(true));
 
     QNetworkReply* reply = m_NetworkAccessManager->get(request);
+    qDebug() << Q_FUNC_INFO << reply;
     NetworkReply* networkReply = new NetworkReply(reply);
     QQmlEngine::setObjectOwnership(networkReply, QQmlEngine::JavaScriptOwnership);
     return networkReply;
@@ -175,6 +177,7 @@ NetworkReply* NetworkAccessManager::post(const QUrl& url, const QVariant& params
 
 void NetworkAccessManager::onFinished(QNetworkReply* reply)
 {
+    qDebug() << Q_FUNC_INFO << reply;
     NetworkReply* networkReply = new NetworkReply(reply);
     QQmlEngine::setObjectOwnership(networkReply, QQmlEngine::JavaScriptOwnership);
     emit finished(networkReply);

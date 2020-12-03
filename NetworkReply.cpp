@@ -11,7 +11,8 @@
 
 NetworkReply::NetworkReply(QObject* parent) :
     QObject(parent),
-    m_Reply(nullptr)
+    m_Reply(nullptr),
+    m_FollowRedirects(false)
 {
 }
 
@@ -35,6 +36,10 @@ NetworkReply::NetworkReply(QNetworkReply* reply, QObject* parent) :
 
 NetworkReply::~NetworkReply()
 {
+    if (!m_Reply)
+    {
+        close();
+    }
 }
 
 //----------------------------------------------------------------------
@@ -100,3 +105,23 @@ void NetworkReply::onFinished()
 //----------------------------------------------------------------------
 //
 //----------------------------------------------------------------------
+
+void NetworkReply::setFollowRedirects(bool followRedirects)
+{
+    Q_UNUSED(followRedirects)
+
+}
+
+//----------------------------------------------------------------------
+//
+//----------------------------------------------------------------------
+
+void NetworkReply::close()
+{
+    if (m_Reply)
+    {
+        disconnect(m_Reply, &QNetworkReply::finished, this, &NetworkReply::onFinished);
+        m_Reply->deleteLater();
+        m_Reply = nullptr;
+    }
+}
