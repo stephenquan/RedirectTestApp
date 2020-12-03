@@ -9,7 +9,7 @@ Page {
     QtObject {
         id: properties
 
-        property url defaultUrl: "http://localhost:1234/api/debug301?a=1&b=2"
+        property url defaultUrl: "http://localhost:1234/api/debug307?a=1&b=2"
         property int error: 0
         property string errorString: ""
         property int statusCode: 0
@@ -25,10 +25,10 @@ Page {
         property color headerBackgroundColor: "#e0e0e0"
         property color headerTextColor: "black"
         property double headerTextPointSize: 12
-        property color inactiveAddressBackgroundColor: "#f0f0f0"
-        property color inactiveAddressBorderColor: "#e0e0e0"
-        property color activeAddressBorderColor: "#8080ff"
-        property color activeAddressBackgroundColor: "white"
+        property color inactiveBackgroundColor: "#f0f0f0"
+        property color inactiveBorderColor: "#e0e0e0"
+        property color activeBorderColor: "#8080ff"
+        property color activeBackgroundColor: "white"
         property double heading1TextPointSize: 14
         property bool heading1TextBold: false
         property color frameBackgroundColor: "#f0f0f0"
@@ -74,6 +74,8 @@ Page {
 
                     model: [ 'GET', 'POST' ]
                     font.pointSize: styles.textPointSize
+
+                    Component.onCompleted: Qt.callLater( () => { currentIndex = 1; } )
                 }
 
                 Frame {
@@ -81,11 +83,11 @@ Page {
 
                     background: Rectangle {
                         color: addressTextInput.activeFocus
-                               ? styles.activeAddressBackgroundColor
-                               : styles.inactiveAddressBackgroundColor
+                               ? styles.activeBackgroundColor
+                               : styles.inactiveBackgroundColor
                         border.color: addressTextInput.activeFocus
-                                      ? styles.activeAddressBorderColor
-                                      : styles.inactiveAddressBorderColor
+                                      ? styles.activeBorderColor
+                                      : styles.inactiveBorderColor
                     }
 
                     TextInput {
@@ -140,6 +142,16 @@ Page {
                             Frame {
                                 Layout.fillWidth: true
                                 Layout.preferredWidth: 100
+
+                                background: Rectangle {
+                                    color: keyTextInput.activeFocus
+                                           ? styles.activeBackgroundColor
+                                           : styles.inactiveBackgroundColor
+                                    border.color: keyTextInput.activeFocus
+                                                  ? styles.activeBorderColor
+                                                  : styles.inactiveBorderColor
+                                }
+
                                 RowLayout {
                                     width: parent.width
 
@@ -169,9 +181,11 @@ Page {
                                         font.pointSize: styles.textPointSize
 
                                         visible: activeFocus
+                                        selectByMouse: true
 
-                                        onAccepted: {
+                                        onTextChanged: {
                                             key = text;
+                                            blankParamAtEnd();
                                         }
                                     }
                                 }
@@ -180,6 +194,16 @@ Page {
                             Frame {
                                 Layout.fillWidth: true
                                 Layout.preferredWidth: 100
+
+                                background: Rectangle {
+                                    color: valueTextInput.activeFocus
+                                           ? styles.activeBackgroundColor
+                                           : styles.inactiveBackgroundColor
+                                    border.color: valueTextInput.activeFocus
+                                                  ? styles.activeBorderColor
+                                                  : styles.inactiveBorderColor
+                                }
+
                                 RowLayout {
                                     width: parent.width
 
@@ -188,12 +212,34 @@ Page {
 
                                         text: value
                                         font.pointSize: styles.textPointSize
+                                        visible: !valueTextInput.visible
+
+                                        MouseArea {
+                                            anchors.fill: parent
+
+                                            enabled: !header
+
+                                            onClicked: {
+                                                valueTextInput.text = value;
+                                                valueTextInput.forceActiveFocus();
+                                            }
+                                        }
                                     }
 
                                     TextInput {
+                                        id: valueTextInput
+
                                         Layout.fillWidth: true
 
-                                        visible: !header
+                                        visible: activeFocus
+                                        selectByMouse: true
+
+                                        onTextChanged: {
+                                            if (visible) {
+                                                value = text;
+                                                blankParamAtEnd();
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -246,8 +292,8 @@ Page {
                     Text {
                         Layout.fillWidth: true
                         text: qsTr("%1 - %2")
-                                  .arg(properties.error)
-                                  .arg(properties.errorString)
+                        .arg(properties.error)
+                        .arg(properties.errorString)
                         font.pointSize: styles.textPointSize
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     }
@@ -368,12 +414,16 @@ Page {
     Connections {
         target: properties.networkReply
 
-        onFinished: {
+        onFinished: finished()
+
+        function finished() {
             properties.error = properties.networkReply.error;
             properties.errorString = properties.networkReply.errorString;
             properties.statusCode = properties.networkReply.statusCode;
             properties.headers = properties.networkReply.headers;
             properties.response = properties.networkReply.readAll();
+            properties.networkReply.close();
+            properties.networkReply = null;
         }
     }
 
@@ -393,7 +443,8 @@ Page {
 
     function blankParamAtEnd() {
         let last = bodyParams.get(bodyParams.count - 1);
-        if (!last.key || !last.value) {
+        console.log("last: ", JSON.stringify(last));
+        if (last.key || last.value) {
             bodyParams.append( { key : "", value: "" } );
         }
     }
