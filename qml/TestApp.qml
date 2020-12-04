@@ -405,7 +405,7 @@ Page {
             properties.errorString = reply.errorString;
             properties.statusCode = reply.statusCode;
             properties.headers = reply.headers;
-            properties.response = reply.readAll();
+            properties.response = reply.response;
             console.log("response: ", properties.response);
         }
         */
@@ -421,8 +421,7 @@ Page {
             properties.errorString = properties.networkReply.errorString;
             properties.statusCode = properties.networkReply.statusCode;
             properties.headers = properties.networkReply.headers;
-            properties.response = properties.networkReply.readAll();
-            properties.networkReply.close();
+            properties.response = properties.networkReply.response;
             properties.networkReply = null;
         }
     }

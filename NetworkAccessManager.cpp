@@ -17,7 +17,10 @@
 NetworkAccessManager::NetworkAccessManager(QObject* parent) :
     QObject(parent),
     m_NetworkAccessManager(nullptr),
-    m_MultiPart(nullptr)
+    m_MultiPart(nullptr),
+    //m_FollowRedirects(FollowRedirectsQt),
+    m_FollowRedirects(FollowRedirectsSoftware),
+    m_PostBodyMode(PostBodyByteArray)
 {
     qDebug() << Q_FUNC_INFO << this;
 }
@@ -109,11 +112,17 @@ NetworkReply* NetworkAccessManager::get(const QUrl& url)
     }
 
     QNetworkRequest request(url);
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, QVariant(true));
 
-    QNetworkReply* reply = m_NetworkAccessManager->get(request);
-    qDebug() << Q_FUNC_INFO << reply;
-    NetworkReply* networkReply = new NetworkReply(reply);
+    request.setAttribute(
+                QNetworkRequest::FollowRedirectsAttribute,
+                QVariant(m_FollowRedirects == FollowRedirectsQt));
+
+    QNetworkReply* _networkReply = m_NetworkAccessManager->get(request);
+    qDebug() << Q_FUNC_INFO << _networkReply;
+    NetworkReply* networkReply = new NetworkReply();
+    networkReply->setHttpMethod(HttpMethodGET);
+    networkReply->setFollowRedirects(m_FollowRedirects);
+    networkReply->setNetworkReply(_networkReply);
     QQmlEngine::setObjectOwnership(networkReply, QQmlEngine::JavaScriptOwnership);
     return networkReply;
 }
@@ -145,29 +154,39 @@ NetworkReply* NetworkAccessManager::post(const QUrl& url, const QVariant& params
 
     QVariantMap paramsMap = params.toMap();
     bool hasParams = paramsMap.keys().count() > 0;
-    bool userHttpMultiPart = false;
 
-    QNetworkReply* reply = nullptr;
     QNetworkRequest request(url);
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, QVariant(true));
+    request.setAttribute(
+                QNetworkRequest::FollowRedirectsAttribute,
+                QVariant(m_FollowRedirects == FollowRedirectsQt));
+
+    QNetworkReply* _networkReply = nullptr;
+    NetworkReply* networkReply = new NetworkReply();
+    networkReply->setHttpMethod(HttpMethodPOST);
+    networkReply->setFollowRedirects(m_FollowRedirects);
+    QQmlEngine::setObjectOwnership(networkReply, QQmlEngine::JavaScriptOwnership);
+
     if (!hasParams)
     {
-        reply = m_NetworkAccessManager->post(request, QByteArray());
+        _networkReply = m_NetworkAccessManager->post(request, QByteArray());
+        networkReply->setNetworkReply(_networkReply);
     }
-    else if (userHttpMultiPart)
+
+    if (m_PostBodyMode == PostBodyMultiPart)
     {
         m_MultiPart = encodeHttpMultiPart(paramsMap);
-        reply = m_NetworkAccessManager->post(request, m_MultiPart);
+        _networkReply = m_NetworkAccessManager->post(request, m_MultiPart);
+        networkReply->setNetworkReply(_networkReply);
     }
-    else
+    else // m_PostBodyMode == PostBodyByteArray
     {
         request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/x-www-form-urlencoded"));
         QByteArray body = encodeByteArray(paramsMap);
-        reply = m_NetworkAccessManager->post(request, body);
+        _networkReply = m_NetworkAccessManager->post(request, body);
+        networkReply->setBody(body);
+        networkReply->setNetworkReply(_networkReply);
     }
 
-    NetworkReply* networkReply = new NetworkReply(reply);
-    QQmlEngine::setObjectOwnership(networkReply, QQmlEngine::JavaScriptOwnership);
     return networkReply;
 }
 

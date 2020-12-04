@@ -14,6 +14,29 @@ class NetworkAccessManager : public QObject
     Q_OBJECT
 
 public:
+    enum FollowRedirects
+    {
+        FollowRedirectsDisabled,
+        FollowRedirectsQt,
+        FollowRedirectsSoftware
+    };
+    Q_ENUM(FollowRedirects)
+
+    enum PostBodyMode
+    {
+        PostBodyMultiPart,
+        PostBodyByteArray
+    };
+    Q_ENUM(PostBodyMode)
+
+    enum HttpMethod
+    {
+        HttpMethodGET,
+        HttpMethodPOST
+    };
+    Q_ENUM(HttpMethod)
+
+public:
     NetworkAccessManager(QObject* parent = nullptr);
     ~NetworkAccessManager();
 
@@ -26,6 +49,8 @@ signals:
 protected:
     QNetworkAccessManager* m_NetworkAccessManager;
     QHttpMultiPart* m_MultiPart;
+    FollowRedirects m_FollowRedirects;
+    PostBodyMode m_PostBodyMode;
 
     void connectSignals();
     void disconnectSignals();

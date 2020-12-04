@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QUrl>
 #include <QNetworkReply>
+#include <QByteArray>
+#include "NetworkAccessManager.h"
 
 class NetworkReply : public QObject
 {
@@ -13,14 +15,21 @@ class NetworkReply : public QObject
     Q_PROPERTY(QString errorString READ errorString NOTIFY finished)
     Q_PROPERTY(int statusCode READ statusCode NOTIFY finished)
     Q_PROPERTY(QVariant headers READ headers NOTIFY finished)
+    Q_PROPERTY(QByteArray response READ response NOTIFY finished)
 
 public:
     NetworkReply(QObject* parent = nullptr);
-    NetworkReply(QNetworkReply* reply, QObject* parent = nullptr);
     ~NetworkReply();
 
-    Q_INVOKABLE QByteArray readAll();
-    Q_INVOKABLE void close();
+public:
+    NetworkAccessManager::HttpMethod httpMethod() const { return m_HttpMethod; }
+    void setHttpMethod(NetworkAccessManager::HttpMethod httpMethod);
+    NetworkAccessManager::FollowRedirects followRedirects() const { return m_FollowRedirects; }
+    void setFollowRedirects(NetworkAccessManager::FollowRedirects followRedirects);
+    QNetworkReply* networkReply() const { return m_Reply; }
+    void setNetworkReply(QNetworkReply* reply);
+    void setBody(const QByteArray& body);
+    QByteArray response() const { return m_Response; }
 
 signals:
     void finished();
@@ -30,15 +39,21 @@ protected slots:
 
 protected:
     QNetworkReply* m_Reply;
-    bool m_FollowRedirects;
+    NetworkAccessManager::HttpMethod m_HttpMethod;
+    NetworkAccessManager::FollowRedirects m_FollowRedirects;
+    QByteArray m_BodyByteArray;
+    QByteArray m_Response;
+    int m_Error;
+    QString m_ErrorString;
+    int m_StatusCode;
+    QString m_StatusText;
+    QVariant m_Headers;
 
-    int error() const { return m_Reply ? m_Reply->error() : 0; }
-    QString errorString() const { return m_Reply ? m_Reply->errorString() : ""; }
-    int statusCode() const;
-    QString statusText() const;
-    QVariant headers() const;
-    bool followRedirects() const { return m_FollowRedirects; }
-    void setFollowRedirects(bool followRedirects);
+    int error() const { return m_Error; }
+    QString errorString() const { return m_ErrorString; }
+    int statusCode() const { return m_StatusCode; }
+    QVariant headers() const { return m_Headers; }
+    void update();
 
 };
 
